@@ -17,7 +17,7 @@ const listDirectories = {
   url: 'https://api.github.com/repos/FillipeDiord/files/contents',
   headers: {
     Accept: 'application/vnd.github.v3+json',
-    Authorization: 'token {TOKEN}'
+    Authorization: 'token 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'
   }
 };
 
@@ -42,7 +42,7 @@ const groupingFiles = (directories) => {
       url: `https://api.github.com/repos/FillipeDiord/files/contents/${directory}`,
       headers: {
         Accept: 'application/vnd.github.v3+json',
-        Authorization: 'token {TOKEN}'
+        Authorization: 'token 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'
       }
     };
 
@@ -66,24 +66,20 @@ const groupingFiles = (directories) => {
 
 const downloadFiles = (downloadableFileObjects) => {
 
-  console.log('downloadableFileObjects', downloadableFileObjects);
-
   downloadableFileObjects.forEach(downloadableFileObject => {
     const url = `https://raw.githubusercontent.com/FillipeDiord/files/main/${downloadableFileObject.path}`;
 
     request({
       url, encoding: null, headers: {
-        Authorization: 'token {TOKEN}',
+        Authorization: 'token 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',
         Accept: 'application/vnd.github.v3+json',
       },
     }, function (err, resp, body) {
-      console.log('Archive', body);
-      
       const fileName = 'image.png';
 
       if (err) throw err;
       fs.writeFile(fileName, body, function (err) {
-        console.log('file written!');
+        
       });
     });
   });
