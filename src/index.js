@@ -78,15 +78,7 @@ const downloadFiles = (downloadableFileObjects) => {
       },
     }, function (err, resp, body) {
       console.log('Archive', body);
-
-      // const firmwareObject = {
-      //   file_name: fileObject.name,
-      //   file: body
-      // };
-
-      // firmwares.push(firmwareObject);
-
-      // console.log('FIRMWARES', firmwares.length);
+      
       const fileName = 'image.png';
 
       if (err) throw err;
