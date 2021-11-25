@@ -5,10 +5,6 @@ const fs = require('fs');
 
 const app = express();
 
-app.get("/", (request, response) => {
-  return response.json({ Message: "Hello World!" });
-});
-
 const directories = [];
 const downloadableFileObjects = [];
 
@@ -17,14 +13,14 @@ const listDirectories = {
   url: 'https://api.github.com/repos/FillipeDiord/files/contents',
   headers: {
     Accept: 'application/vnd.github.v3+json',
-    Authorization: 'token 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'
+    Authorization: 'token {TOKEN}'
   }
 };
 
-axios.request(listDirectories).then(async function (response) {
+axios.request(listDirectories).then(function (response) {
   const listUrlDirectories = response.data;
 
-  await listUrlDirectories.forEach(directory => {
+  listUrlDirectories.forEach(directory => {
     directories.push(directory.name);
   });
 
@@ -42,7 +38,7 @@ const groupingFiles = (directories) => {
       url: `https://api.github.com/repos/FillipeDiord/files/contents/${directory}`,
       headers: {
         Accept: 'application/vnd.github.v3+json',
-        Authorization: 'token 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'
+        Authorization: 'token {TOKEN}'
       }
     };
 
@@ -56,12 +52,13 @@ const groupingFiles = (directories) => {
         });
       });
 
+      // Problem here !
       downloadFiles(downloadableFileObjects);
 
     }).catch(function (error) {
       console.error(error);
     });
-  });
+});
 }
 
 const downloadFiles = (downloadableFileObjects) => {
@@ -71,15 +68,17 @@ const downloadFiles = (downloadableFileObjects) => {
 
     request({
       url, encoding: null, headers: {
-        Authorization: 'token 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',
+        Authorization: 'token {TOKEN}',
         Accept: 'application/vnd.github.v3+json',
       },
     }, function (err, resp, body) {
+      console.log('Archive', body);
+
       const fileName = 'image.png';
 
       if (err) throw err;
       fs.writeFile(fileName, body, function (err) {
-        
+        console.log('file written!');
       });
     });
   });
