@@ -17,7 +17,7 @@ function downloadFile() {
       method: 'GET',
       url: 'https://github.com/FillipeDiord/Files/archive/refs/heads/main.zip',
       headers: {
-        Authorization: 'token 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',
+        Authorization: 'token {TOKEN}',
         Accept: 'application/vnd.github.v3+json',
         Encoding: 'null',
       }
