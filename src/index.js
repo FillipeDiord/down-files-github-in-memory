@@ -1,87 +1,69 @@
 const express = require('express');
 const request = require('request');
-const axios = require('axios');
 const fs = require('fs');
+const AdmZip = require('adm-zip');
+// const os = require('os');
+// const path = require('path');
 
 const app = express();
 
-const directories = [];
-const downloadableFileObjects = [];
+downloadFile();
 
-const listDirectories = {
-  method: 'GET',
-  url: 'https://api.github.com/repos/FillipeDiord/files/contents',
-  headers: {
-    Accept: 'application/vnd.github.v3+json',
-    Authorization: 'token {TOKEN}'
-  }
-};
-
-axios.request(listDirectories).then(function (response) {
-  const listUrlDirectories = response.data;
-
-  listUrlDirectories.forEach(directory => {
-    directories.push(directory.name);
-  });
-
-  groupingFiles(directories);
-
-}).catch(function (error) {
-  console.error(error);
-});
-
-const groupingFiles = (directories) => {
-
-  directories.forEach(directory => {
-    const listFiles = {
+function downloadFile() {
+  out = fs.createWriteStream('./src/files.zip');
+  
+  const req = request(
+    {
       method: 'GET',
-      url: `https://api.github.com/repos/FillipeDiord/files/contents/${directory}`,
+      url: 'https://github.com/FillipeDiord/Files/archive/refs/heads/main.zip',
       headers: {
+        Authorization: 'token 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',
         Accept: 'application/vnd.github.v3+json',
-        Authorization: 'token {TOKEN}'
+        Encoding: 'null',
       }
-    };
+    }
+  );
 
-    axios.request(listFiles).then(function (response) {
-      const files = response.data;
-
-      files.forEach(file => {
-        downloadableFileObjects.push({
-          name: file.name,
-          path: file.path
-        });
-      });
-
-      // Problem here !
-      downloadFiles(downloadableFileObjects);
-
-    }).catch(function (error) {
-      console.error(error);
-    });
-});
-}
-
-const downloadFiles = (downloadableFileObjects) => {
-
-  downloadableFileObjects.forEach(downloadableFileObject => {
-    const url = `https://raw.githubusercontent.com/FillipeDiord/files/main/${downloadableFileObject.path}`;
-
-    request({
-      url, encoding: null, headers: {
-        Authorization: 'token {TOKEN}',
-        Accept: 'application/vnd.github.v3+json',
-      },
-    }, function (err, resp, body) {
-      console.log('Archive', body);
-
-      const fileName = 'image.png';
-
-      if (err) throw err;
-      fs.writeFile(fileName, body, function (err) {
-        console.log('file written!');
-      });
-    });
+  req.pipe(out);
+  req.on('end', function () {
+    unzipFiles('./src/files.zip');
   });
 }
+
+async function unzipFiles(zipFileDirectory) {
+  const nameFileDirectory = zipFileDirectory;
+  const zip = new AdmZip(nameFileDirectory);
+
+  zipEntries = zip.getEntries();
+  zip.extractAllTo('./src/files/', true);
+}
+
+function getFiles(directory, files) {
+
+  if (!files) {
+    files = [];
+  }
+
+  const listFiles = fs.readdirSync(directory);
+  let arrayFiles = [];
+  
+  listFiles.forEach(file => {
+    let stat = fs.statSync(directory + '/' + file);
+    if (stat.isDirectory()) {
+      getFiles(directory + '/' + file, files);
+    } else {
+      const objectFile = fs.readFileSync(directory + '/' + file);
+      // console.log('Archive:', objectFile);
+      arrayFiles.push(objectFile);
+      console.log('Array Files', arrayFiles);
+      files.push('/' + file);
+    }
+  });
+
+  return arrayFiles;
+}
+
+let filesList = getFiles('./src/files/');
+console.log('Lista de arquivos', filesList);
 
 app.listen(3333);
