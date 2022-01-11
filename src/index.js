@@ -1,61 +1,90 @@
 const express = require('express');
-const request = require('request');
-const fs = require('fs');
-const AdmZip = require('adm-zip');
+const axios = require('axios');
 
 const app = express();
 
-downloadFile();
+downloadFiles();
 
-function downloadFile() {
-  out = fs.createWriteStream('./src/files.zip');
+async function downloadFiles() {
+  try {
+    const fileTree = [];
+    const temporaryUrlFiles = [];
+    const listFolders = [];
+    const branchName = 'homologation';
 
-  const req = request(
-    {
+    const infoDirectories = {
       method: 'GET',
-      url: 'https://github.com/FillipeDiord/Files/archive/refs/heads/main.zip',
+      url: 'https://api.github.com/repos/FillipeDiord/Files/contents',
+      params: { ref: branchName },
       headers: {
-        Authorization: 'token {TOKEN}',
-        Accept: 'application/vnd.github.v3+json',
-        Encoding: 'null',
+        Accept: 'application/vnd.github.v3+json'
+      }
+    };
+
+    const listDirectories = await axios.request(infoDirectories)
+      .catch(function (error) {
+        console.log(error);
+      });
+    const listUrlDirectories = listDirectories.data;
+
+    const directories = await listUrlDirectories.filter(directory =>
+      directory.name !== 'LICENSE' && directory.name !== 'README.md');
+
+    for (const directory of directories) {
+      const urlDirectory = {
+        method: 'GET',
+        url: `https://api.github.com/repos/FillipeDiord/Files/contents/${directory.name}`,
+        headers: {
+          Accept: 'application/vnd.github.v3+json'
+        }
+      };
+      await listFolders.push(urlDirectory);
+    }
+
+    for (const folder of listFolders) {
+      const result = await axios.request(folder)
+        .catch(function (error) {
+          console.log(error);
+        });
+      await temporaryUrlFiles.push(result.data);
+    }
+
+    for (const temporaryFile of temporaryUrlFiles) {
+      for (const file of temporaryFile) {
+        fileTree.push(file);
       }
     }
-  );
 
-  req.pipe(out);
-  req.on('end', function () {
-    unzipFiles('./src/files.zip');
-  });
-}
+    for (const file of fileTree) {
+      const url = `https://raw.githubusercontent.com/FillipeDiord/Files/${branchName}/${file.path}`;
 
-async function unzipFiles(zipFileDirectory) {
-  const nameFileDirectory = zipFileDirectory;
-  const zip = new AdmZip(nameFileDirectory);
+      const response = await axios.request({
+        method: 'GET',
+        url: url,
+        headers: {
+          Accept: 'application/vnd.github.v3+json'
+        },
+        responseType: 'arraybuffer',
+        responseEncoding: 'binary'
+      }).catch(function (error) {
+        console.log(error);
+      });
 
-  zipEntries = zip.getEntries();
-  await zip.extractAllTo('./src', true);
+      const dataArchive = await response.data;
 
-  getFiles('./src/Files-main');
-}
+      const binData = await dataArchive;
+      const nameFile = file.name;
 
-function getFiles(directory, files) {
-  if (!files) {
-    files = [];
-  }
+      const firmwareVersion = {
+        fileName: nameFile,
+        file: await binData
+      };
 
-  const listFiles = fs.readdirSync(directory);
-
-  listFiles.forEach(file => {
-    let stat = fs.statSync(directory + '/' + file);
-    if (stat.isDirectory()) {
-      getFiles(directory + '/' + file, files);
-    } else {
-      const objectFile = fs.readFileSync(directory + '/' + file);
-      files.push(objectFile);
+      console.log('firmwareVersion', firmwareVersion);
     }
-  });
-
-  return files;
+  } catch (error) {
+    throw error;
+  }
 }
 
 app.listen(3333);
